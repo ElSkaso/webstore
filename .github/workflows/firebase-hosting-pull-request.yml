@@ -14,6 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
+        env:
+          VITE_FIREBASE_API_KEY: "AIzaSyC-8rr-j_Q9c-EcK6MvJ0lwM4C9Y3zX0u0"
+          VITE_FIREBASE_AUTH_DOMAIN: "beaditz.firebaseapp.com"
+          VITE_FIREBASE_PROJECT_ID: "beaditz"
+          VITE_FIREBASE_STORAGE_BUCKET: "beaditz.firebasestorage.app"
+          VITE_FIREBASE_MESSAGING_SENDER_ID: "242942576100"
+          VITE_FIREBASE_APP_ID: "1:242942576100:web:49a99041f491efa01433f1"
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
