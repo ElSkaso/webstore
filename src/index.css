@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-obsidian: hsl(220, 15%, 8%);
+  --color-coal: hsl(220, 12%, 14%);
+  --color-mineral-slate: hsl(220, 10%, 60%);
+  --color-champagne-gold: hsl(38, 40%, 65%);
+  --color-rose-gold: hsl(15, 35%, 70%);
+  --color-silver-accent: hsl(0, 0%, 90%);
+
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+/* Custom Base Overrides for Quiet Luxury Aesthetic */
+@layer base {
+  html, body {
+    background-color: var(--color-obsidian);
+    color: var(--color-silver-accent);
+    font-family: var(--font-sans);
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+
+  /* Elegant minimal scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-obsidian);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(220, 12%, 24%);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-champagne-gold);
+  }
+}
+
+/* Glassmorphism utility variations */
+.glass {
+  background: rgba(30, 32, 38, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-premium {
+  background: linear-gradient(135deg, rgba(30, 32, 38, 0.7) 0%, rgba(18, 20, 24, 0.8) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
+/* Luxury card glows */
+.gold-glow {
+  box-shadow: 0 0 40px -10px rgba(206, 171, 102, 0.15);
+}
+
+.rose-glow {
+  box-shadow: 0 0 40px -10px rgba(224, 155, 124, 0.15);
+}
+
+.silver-glow {
+  box-shadow: 0 0 40px -10px rgba(255, 255, 255, 0.08);
+}
