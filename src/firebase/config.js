@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+
 
 // These keys can be configured in a .env file:
 // VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, etc.
@@ -93,5 +94,32 @@ export const getRegistrations = async () => {
     return registrations;
   }
 };
+
+// Custom abstraction for Google Admin Login
+export const loginWithGoogle = async () => {
+  if (isMockFirebase || !auth) {
+    // Mock Mode: Simulate a successful login for the admin
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          user: { email: "rene.puskas@googlemail.com", displayName: "Rene Puskas (Mock)" }
+        });
+      }, 800);
+    });
+  } else {
+    // Live Firebase Auth mode
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      const result = await signInWithPopup(auth, provider);
+      return { success: true, user: result.user };
+    } catch (error) {
+      console.error("Google Auth failed:", error);
+      throw error;
+    }
+  }
+};
+
 
 export { app, db, auth };
