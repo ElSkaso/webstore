@@ -18,7 +18,7 @@ import {
   Database
 } from "lucide-react";
 import { productConfig } from "./productConfig";
-import { saveRegistration, getRegistrations, isMockFirebase, loginWithGoogle } from "./firebase/config";
+import { saveRegistration, getRegistrations, isMockFirebase, loginWithGoogle, markRegistrationsExported } from "./firebase/config";
 
 export default function App() {
   // Navigation & View States
@@ -44,6 +44,7 @@ export default function App() {
   const [adminError, setAdminError] = useState("");
   const [registrations, setRegistrations] = useState([]);
   const [adminLoading, setAdminLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [stats, setStats] = useState({ total: 0, silver: 0, gold: 0, roseGold: 0, agate: 0, blackTrio: 0 });
 
   // Calculate dynamic stone bead count and total price
@@ -97,6 +98,43 @@ export default function App() {
       }
     } catch (error) {
       setAdminError("Authentication failed. Please try again.");
+    }
+  };
+
+  const handleExport = async (exportAll = false) => {
+    setIsExporting(true);
+    try {
+      const dataToExport = exportAll 
+        ? registrations 
+        : registrations.filter(r => !r.exported);
+        
+      if (dataToExport.length === 0) {
+        alert("No new leads to export.");
+        setIsExporting(false);
+        return;
+      }
+
+      const csvContent = "data:text/csv;charset=utf-8,Email,Metal Plating,Stones,Length,Timestamp,Status\n" + 
+        dataToExport.map(r => `"${r.email}","${r.metal}","${r.stones}",${r.length},"${r.timestamp}","${r.exported ? 'EXPORTED' : 'NEW'}"`).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `rp_demand_${exportAll ? 'all' : 'new'}_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      if (!exportAll) {
+        const ids = dataToExport.map(r => r.id).filter(id => id);
+        if (ids.length > 0) {
+          await markRegistrationsExported(ids);
+          await fetchRegistrations();
+        }
+      }
+    } catch (err) {
+      console.error("Export failed", err);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -840,21 +878,19 @@ export default function App() {
                       Refresh Data
                     </button>
                     <button 
-                      onClick={() => {
-                        const csvContent = "data:text/csv;charset=utf-8,Email,Metal Plating,Stones,Length,Timestamp\n" + 
-                          registrations.map(r => `"${r.email}","${r.metal}","${r.stones}",${r.length},"${r.timestamp}"`).join("\n");
-                        const encodedUri = encodeURI(csvContent);
-                        const link = document.createElement("a");
-                        link.setAttribute("href", encodedUri);
-                        link.setAttribute("download", `rp_drop_demand_${new Date().toISOString().split('T')[0]}.csv`);
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="px-4 py-2 rounded-lg bg-champagne-gold text-black hover:bg-white text-xs font-semibold uppercase tracking-widest transition-all flex items-center space-x-1.5"
+                      onClick={() => handleExport(false)}
+                      disabled={isExporting}
+                      className="px-4 py-2 rounded-lg bg-champagne-gold text-black hover:bg-white text-xs font-semibold uppercase tracking-widest transition-all flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FileSpreadsheet size={13} />
-                      <span>Export CSV</span>
+                      <span>{isExporting ? "Exporting..." : "Export New Leads"}</span>
+                    </button>
+                    <button 
+                      onClick={() => handleExport(true)}
+                      disabled={isExporting}
+                      className="px-4 py-2 rounded-lg border border-white/10 hover:bg-white/5 text-xs text-white uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span>Export All</span>
                     </button>
                   </div>
                 </div>
@@ -893,30 +929,38 @@ export default function App() {
                         No drop registrations captured yet.
                       </div>
                     ) : (
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-white/5 text-[10px] tracking-widest text-mineral-slate uppercase">
-                            <th className="p-4 pl-6">Email Address</th>
-                            <th className="p-4">Metal Plating Selected</th>
-                            <th className="p-4">Stone Variant</th>
-                            <th className="p-4">Sizing Length</th>
-                            <th className="p-4 text-right pr-6">Signup Timestamp</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-white/80">
-                          {registrations.map((reg, idx) => (
-                            <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.01] transition-colors">
-                              <td className="p-4 pl-6 font-semibold text-white">{reg.email}</td>
-                              <td className="p-4 text-mineral-slate">{reg.metal}</td>
-                              <td className="p-4 text-mineral-slate">{reg.stones}</td>
-                              <td className="p-4">{reg.length} cm</td>
-                              <td className="p-4 text-right text-[11px] text-mineral-slate pr-6 font-mono">
-                                {new Date(reg.timestamp).toLocaleString()}
-                              </td>
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-white/5 text-[10px] tracking-widest text-mineral-slate uppercase">
+                              <th className="p-4 pl-6">Status</th>
+                              <th className="p-4">Email Address</th>
+                              <th className="p-4">Metal Plating Selected</th>
+                              <th className="p-4">Stone Variant</th>
+                              <th className="p-4">Sizing Length</th>
+                              <th className="p-4 text-right pr-6">Signup Timestamp</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="text-white/80">
+                            {registrations.map((reg, idx) => (
+                              <tr key={idx} className="border-b border-white/[0.03] hover:bg-white/[0.01] transition-colors">
+                                <td className="p-4 pl-6">
+                                  {reg.exported ? (
+                                    <span className="px-2 py-0.5 rounded-full border border-white/10 text-[9px] uppercase tracking-wider text-mineral-slate">Exported</span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full border border-champagne-gold/50 bg-champagne-gold/10 text-[9px] uppercase tracking-wider text-champagne-gold">New Lead</span>
+                                  )}
+                                </td>
+                                <td className="p-4 font-semibold text-white">{reg.email}</td>
+                                <td className="p-4 text-mineral-slate">{reg.metal}</td>
+                                <td className="p-4 text-mineral-slate">{reg.stones}</td>
+                                <td className="p-4">{reg.length} cm</td>
+                                <td className="p-4 text-right text-[11px] text-mineral-slate pr-6 font-mono">
+                                  {new Date(reg.timestamp).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                     )}
                   </div>
                 </div>
