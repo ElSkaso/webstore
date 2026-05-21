@@ -71,3 +71,14 @@ AI agents reading this repository must recognize and respond to the following tr
      * **UI/UX Design System**: Color palette (harmonious HSL/RGB), typography, and animation tokens.
      * **Milestones & Implementation Steps**: Organized phases (Phase 1: Setup/Auth, Phase 2: Catalog/Cart, Phase 3: Checkout/Payments, Phase 4: Polish/Deployment).
      * **Verification Plan**: Step-by-step testing instructions.
+
+---
+
+## 4. Communication Guidelines (Strict Brevity)
+
+To respect the user's time and avoid cluttering the chat window, all AI agents **MUST** follow these communication guidelines:
+* **Strict Brevity:** Keep all chat responses extremely short, concise, and direct. Avoid long introductions, pleasantries, or wrapping up paragraphs.
+* **Bullet-point Summaries:** Use short bullet points rather than long paragraphs of text.
+* **Code Diffs Only:** Never output entire source files in the chat; output only direct, minimal code diffs or targeted snippets if required.
+* **No Unsolicited Explanations:** Answer the question directly without explaining background mechanics unless the user explicitly asks "why" or "how".
+* **Under 3-4 Sentences:** Aim to keep the text-based portion of any standard chat response to under 3 or 4 sentences total whenever possible.

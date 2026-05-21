@@ -246,8 +246,9 @@ export default function App() {
         }
       }, 2400); // Complete processing sequence
     } catch (error) {
+      console.error("Pre-order submission failed:", error);
       setTimeout(() => {
-        alert("Transaction failed. Please review details.");
+        alert(`Transaction failed: ${error.message || "Please review details."}`);
         setCheckoutStep("form");
       }, 2400);
     }
@@ -264,7 +265,8 @@ export default function App() {
       await updateOrderStatus(orderId, stage);
       fetchAdminData();
     } catch (error) {
-      alert("Failed to update status.");
+      console.error("Failed to update status:", error);
+      alert(`Failed to update status: ${error.message || "Unknown error."}`);
     }
   };
 
@@ -282,7 +284,8 @@ export default function App() {
       setInlineStageSelectors(prev => ({ ...prev, [orderId]: null }));
       fetchAdminData();
     } catch (error) {
-      alert("Failed to dispatch order.");
+      console.error("Failed to dispatch order:", error);
+      alert(`Failed to dispatch order: ${error.message || "Unknown error."}`);
     }
   };
 
@@ -300,7 +303,8 @@ export default function App() {
         await batchUpdateOrderStatus(ids, 2);
         fetchAdminData();
       } catch (err) {
-        alert("Batch update failed.");
+        console.error("Batch sourcing update failed:", err);
+        alert(`Batch update failed: ${err.message || "Unknown error."}`);
       } finally {
         setAdminLoading(false);
       }
@@ -321,7 +325,8 @@ export default function App() {
         await batchUpdateOrderStatus(ids, 3);
         fetchAdminData();
       } catch (err) {
-        alert("Batch update failed.");
+        console.error("Batch production update failed:", err);
+        alert(`Batch update failed: ${err.message || "Unknown error."}`);
       } finally {
         setAdminLoading(false);
       }
