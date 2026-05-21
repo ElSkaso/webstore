@@ -20,12 +20,7 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: "242942576100"
           VITE_FIREBASE_APP_ID: "1:242942576100:web:49a99041f491efa01433f1"
           VITE_RESEND_API_KEY: ${{ secrets.VITE_RESEND_API_KEY }}
-      - name: Deploy Firestore Rules
-        uses: w9jds/firebase-action@master
-        with:
-          args: deploy --only firestore:rules
-        env:
-          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_BEADITZ }}
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}

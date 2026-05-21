@@ -25,6 +25,8 @@ import {
   ExternalLink
 } from "lucide-react";
 import { productConfig } from "./productConfig";
+import { stageIntros } from "./firebase/emailTemplates";
+
 import { 
   saveRegistration, 
   getRegistrations, 
@@ -182,13 +184,7 @@ export default function App() {
         totalPrice: totalPrice
       }
     };
-    const stageIntros = [
-      `Vielen Dank für Dein Vertrauen in ehrliche Handwerkskunst. Wir haben Deine Pre-Order für das Beaded Bracelet erfolgreich gesichert. Die Materialanforderungen sind zusammengestellt und der Sourcing-Auftrag für die Rohmaterialien nach Bali ist initiiert.`,
-      `Ein wichtiger Meilenstein ist erreicht: Unsere Partner in Bali haben die ethically-sourced 925 Sterling Silber Perlen und die vulkanischen Gesteine für Deine Bestellung ausgewählt und erworben. Die Komponenten machen sich nun auf den Weg in unser deutsches Atelier.`,
-      `Die edlen Mineralkomponenten und handgebürsteten Silberperlen sind unversehrt im Atelier eingetroffen. Dein Armband wird nun in präziser Handarbeit auf den hochfesten 1.0mm Edelstahl-Kern aufgezogen und mit unserer doppelten Sicherungskette vollendet.`,
-      `Nach strengster Qualitätskontrolle (Gewichtsprüfung und Magnet-Zugkraftmessung) ist Dein Beaded Bracelet fertiggestellt und in unserer obsidian-schwarzen Leinen-Verpackung sicher verstaut. Das Paket wurde soeben an DHL Express übergeben.`
-    ];
-    
+
     const html = getEmailTemplateHtml(
       mockOrder, 
       previewStage, 
