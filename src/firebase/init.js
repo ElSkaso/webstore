@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "mock-api-key-rene-puskas",
@@ -18,18 +19,21 @@ export const isMockFirebase =
 let app;
 let db;
 let auth;
+let functions;
 
 if (!isMockFirebase) {
   try {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     db = getFirestore(app);
     auth = getAuth(app);
+    functions = getFunctions(app);
     console.log("Firebase initialized successfully in Production Mode.");
   } catch (error) {
     console.error("Firebase initialization failed, falling back to Mock Mode:", error);
     app = null;
     db = null;
     auth = null;
+    functions = null;
   }
 } else {
   console.warn(
@@ -38,4 +42,5 @@ if (!isMockFirebase) {
   );
 }
 
-export { app, db, auth };
+export { app, db, auth, functions };
+

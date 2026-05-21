@@ -1,9 +1,9 @@
 import { stageTitles, stageIntros, getEmailTemplateHtml } from "../firebase/emailTemplates";
+import { isMockFirebase, functions } from "../firebase/config";
 
 export const sendResendEmail = async (email, order, stage, trackingNumber = "") => {
-  const apiKey = import.meta.env.VITE_RESEND_API_KEY;
-  // If no env key, run in Mock E-Mail mode (safe, local offline development)
-  const isMock = !apiKey || apiKey === "mock-api-key-rene-puskas";
+  // If running in Mock mode, run in local mock offline mode
+  const isMock = isMockFirebase;
 
   const subject = `RP-2026: ${stageTitles[stage - 1]} — Bestellung ${order.id}`;
   const htmlContent = getEmailTemplateHtml(order, stage, stageIntros[stage - 1], trackingNumber);
@@ -26,30 +26,25 @@ export const sendResendEmail = async (email, order, stage, trackingNumber = "") 
     return { success: true, mode: "mock", subject };
   } else {
     try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          from: "Rene Puskas <noreply@renepuskas.com>",
-          to: email,
-          subject: subject,
-          html: htmlContent
-        })
+      if (!functions) {
+        throw new Error("Firebase Functions SDK is not initialized.");
+      }
+
+      const { httpsCallable } = await import("firebase/functions");
+      const sendOrderEmailFn = httpsCallable(functions, "sendOrderEmail");
+      
+      const result = await sendOrderEmailFn({
+        orderId: order.id,
+        stage: Number(stage),
+        trackingNumber: trackingNumber || ""
       });
       
-      const resData = await response.json();
-      if (!response.ok) {
-        console.error("Resend API error:", resData);
-        throw new Error(resData.message || "Email sending failed");
-      }
-      return { success: true, mode: "live", id: resData.id };
+      return { success: true, mode: "live", id: result.data.id };
     } catch (error) {
-      console.error("Failed to send live Resend email:", error);
+      console.error("Failed to send live Resend email via Cloud Function:", error);
       // Fail safely for client ease in development
       return { success: true, mode: "fallback-error", error: error.message };
     }
   }
 };
+

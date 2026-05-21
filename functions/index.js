@@ -1,32 +1,93 @@
 /**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ * Rene Puskas Jewelry — Backend Cloud Functions
  */
 
+const {initializeApp} = require("firebase-admin/app");
+const {getFirestore} = require("firebase-admin/firestore");
 const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
+const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+// Initialize Firebase Admin SDK
+initializeApp();
+const db = getFirestore();
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+// Import email templates
+const {stageTitles, stageIntros, getEmailTemplateHtml} = require("./emailTemplates");
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Cost and instances control
+setGlobalOptions({maxInstances: 10});
+
+/**
+ * Cloud Function to securely send order status emails using Resend.
+ * Stage 1 is accessible to public guest checkout.
+ * Stages 2, 3, 4 require admin credentials.
+ */
+exports.sendOrderEmail = onCall({secrets: ["RESEND_API_KEY"]}, async (request) => {
+  const {orderId, stage, trackingNumber} = request.data;
+
+  if (!orderId || !stage) {
+    throw new HttpsError("invalid-argument", "Missing orderId or stage.");
+  }
+
+  // 1. Fetch authentic order data directly from Firestore
+  let order;
+  try {
+    const orderDoc = await db.collection("orders").document(orderId).get();
+    if (!orderDoc.exists) {
+      throw new HttpsError("not-found", `Order ${orderId} does not exist.`);
+    }
+    order = orderDoc.data();
+  } catch (error) {
+    logger.error("Firestore read error:", error);
+    throw new HttpsError("internal", "Failed to retrieve order records.");
+  }
+
+  // 2. Validate permissions based on stage transitions
+  if (stage > 1) {
+    const userEmail = request.auth && request.auth.token && request.auth.token.email;
+    if (userEmail !== "rene.puskas@googlemail.com") {
+      throw new HttpsError("permission-denied", "Unauthorized admin action.");
+    }
+  }
+
+  // 3. Render high-fidelity email templates
+  const subject = `RP-2026: ${stageTitles[stage - 1]} — Bestellung ${order.id}`;
+  const htmlContent = getEmailTemplateHtml(order, stage, stageIntros[stage - 1], trackingNumber || "");
+
+  // 4. Retrieve Secret API Key
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    logger.error("RESEND_API_KEY secret is not configured in Google Cloud Secret Manager.");
+    throw new HttpsError("failed-precondition", "Backend mail configuration missing.");
+  }
+
+  // 5. Secure Server-to-Server Resend Call (Bypassing browser CORS)
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        from: "Rene Puskas <noreply@renepuskas.com>",
+        to: order.email,
+        subject: subject,
+        html: htmlContent,
+      }),
+    });
+
+    const resData = await response.json();
+    if (!response.ok) {
+      logger.error("Resend API failed response:", resData);
+      throw new HttpsError("internal", resData.message || "Email provider dispatch failed.");
+    }
+
+    logger.info(`Email successfully dispatched for order ${orderId}, stage ${stage}. Msg ID: ${resData.id}`);
+    return {success: true, id: resData.id};
+  } catch (error) {
+    logger.error("Network or provider error dispatching email:", error);
+    throw new HttpsError("internal", error.message || "Failed to dispatch email.");
+  }
+});
