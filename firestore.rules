@@ -6,5 +6,9 @@ service cloud.firestore {
       allow create: if true;
       allow read, update, delete: if request.auth != null && request.auth.token.email == "rene.puskas@googlemail.com";
     }
+    match /orders/{document=**} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null && request.auth.token.email == "rene.puskas@googlemail.com";
+    }
   }
 }

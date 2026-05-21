@@ -1,64 +1,57 @@
 # Rene Puskas Jewelry — Project Next Steps
 
-This document outlines the actionable next steps for the **Rene Puskas** quiet-luxury beaded bracelet e-commerce store. Follow this guide to run, test, customize, and deploy your new validation-driven e-commerce page.
+This document outlines the actionable next steps for the **Rene Puskas** quiet-luxury beaded bracelet e-commerce store, which has been pivoted to a high-transparency **Pre-Order Sourcing & Production Tracker**.
 
 ---
 
-## 🚀 1. Local Development & Immediate Verification
+## 🚀 1. Local Development & Verification (Mock Mode)
 
-Your project is built with React, Vite, and TailwindCSS v4. It features a zero-configuration database fallback that works right out of the box using `localStorage` if no Firebase credentials are provided.
+Your project is built with React, Vite, and TailwindCSS v4. It features a zero-configuration developer experience that works right out of the box using `localStorage` if no Firebase or Resend credentials are provided.
 
 ### Start the Development Server
-Run the following commands in your terminal from the project directory:
+Run the following command in your terminal from the project directory:
 ```bash
-# Start the development server
 npm run dev
 ```
 
 ### Key Interactive Features to Verify
 1. **Premium Hero Section**: Look at the luxury serif typography, minimalist brand header, and material sourcing cards.
-2. **Interactive visual Configurator**:
+2. **Interactive Visual Configurator**:
    - Swap **Metal Platings**: Toggle between 925 Sterling Silver, 18k Gold Plated, and 18k Rose Gold Plated to see instant color updates in the visualizer.
    - Swap **Stones**: Toggle between Brown Stripe-Agate and the Black-Trio (onyx and lava stone).
    - Adjust **Bracelet Length**: Change size options and observe how the stone bead counts dynamically recalculate.
 3. **Printable Measuring Tape**: Click the size guide ruler icon, click **"Print Measuring Tape"**, and verify the print layout preserves the 1:1 scale matching standard office printers (equipped with a 50mm ruler validation line).
-4. **Limited-Drop Reservation**:
-   - Enter your email and click "Reserve".
-   - The app will save your exact configuration (chosen stone, chosen metal plating, chosen size) along with a timestamp.
-5. **Secure Admin Analytics Dashboard**:
+4. **Checkout Drawer & Payment Simulator**:
+   - Configure your bracelet and click **"Pre-Order Jetzt — 165 €"**.
+   - Review your chosen custom design recap in the slide-out Checkout Drawer.
+   - Fill in shipping details, choose a mock payment option (Credit Card or PayPal), and submit.
+   - Watch the buttery-smooth 2-second dark loader cycle through high-fidelity gateway steps (*"Connecting to gateway..."*, *"Securing mineral allocation..."*).
+   - Verify that you are presented with a minimalist Success modal showing a unique, serial-style Order ID (e.g. `RP-2026-X8B4`).
+5. **Secure Admin Sourcing Dashboard**:
    - Navigate to the admin path in your browser: `/admin`.
    - Enter the secure dashboard code: **`rp2026`**
-   - Verify that you can view real-time statistics (total registrations, stone distributions, plating preferences, sizing averages) and export all submissions to a standard `.csv` file.
+   - Click the **"Pre-Orders"** tab. Verify that your pre-order appears instantly in Stage 1 (*"Verfügbarkeitsbestätigung"*).
+   - Click **"Sourcing Bali starten (Batch)"**. Verify that the status shifts to Stage 2 (*"Einkaufsbestätigung"*) and updates the database.
+   - Click **"Produktion starten (Batch)"**. Verify that the order transitions to Stage 3 (*"Produktionsstart"*).
+   - In the DHL Sendungsnummer input field next to the order, type a mock tracking ID (e.g., `1Z999AA10123456784`) and click **"Ship"**. Verify that the order enters Stage 4 (*"Versandbestätigung"*).
+6. **E-Mail Logs & Visual Previewer**:
+   - Click on the **"E-Mails"** sub-tab in `/admin`.
+   - View the history of sent transactional emails.
+   - Click **"Vorschau anzeigen"** next to any mail log to inspect the stunning HSL dark-mode HTML template rendering live inside a responsive iframe!
 
 ---
 
 ## 💾 2. Connecting a Live Database (Google Cloud Firebase)
 
-The application includes a dual-mode database abstraction in [src/firebase/config.js](file:///Users/rene/Documents/Projekte/shop/src/firebase/config.js). By default, it operates in **Mock Mode** using the browser's `localStorage` (perfect for local demos, offline work, and instant testing).
+The application includes a dual-mode database abstraction in `src/firebase/config.js`.
 
-To transition to a live database:
-1. **Create a Firebase Project**:
-   - Go to the [Firebase Console](https://console.firebase.google.com/).
-   - Click **Add Project** and name it `rene-puskas-shop` (or your preferred name).
-2. **Create a Web App & Copy Configuration**:
-   - Inside the project dashboard, click the `</>` (Web) icon to register a web app.
-   - Copy the `firebaseConfig` object containing:
-     ```javascript
-     const firebaseConfig = {
-       apiKey: "...",
-       authDomain: "...",
-       projectId: "...",
-       storageBucket: "...",
-       messagingSenderId: "...",
-       appId: "..."
-     };
-     ```
-3. **Enable Firestore Database**:
-   - In the left sidebar, click **Build > Firestore Database**.
-   - Click **Create Database**, select a region close to you, and start in **Production Mode** or **Test Mode**.
-4. **Environment Variables Configuration**:
-   - Create a file named `.env` in your project root: `/Users/rene/Documents/Projekte/shop/.env`
-   - Map your Firebase web credentials to the following environment variables:
+To transition from local `localStorage` mock mode to your live Firebase project:
+1. **Configure your Firebase Project**:
+   - Go to your project in the [Firebase Console](https://console.firebase.google.com/).
+   - Enable the **Firestore Database** in **Production Mode**.
+2. **Configure Environment Variables**:
+   - Open your `.env` file in the project root: `/Users/rene/Documents/Projekte/shop/.env`
+   - Set up your web application credentials:
      ```env
      VITE_FIREBASE_API_KEY=your-api-key
      VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
@@ -67,41 +60,50 @@ To transition to a live database:
      VITE_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
      VITE_FIREBASE_APP_ID=your-app-id
      ```
-   - Restart the Vite development server. The app will automatically detect these variables and seamlessly connect to Cloud Firestore!
+   - Restart the development server. The client will automatically connect to your live collections!
+3. **Deploy Security Rules**:
+   - The security rules in [firestore.rules](file:///Users/rene/Documents/Projekte/shop/firestore.rules) have been updated to protect `/orders` as well.
+   - Deploy these rules using the Firebase CLI:
+     ```bash
+     npx firebase deploy --only firestore:rules
+     ```
+   - Only your verified Google account (`rene.puskas@googlemail.com`) will be allowed to perform read, update, or delete mutations on waitlists and pre-orders.
 
 ---
 
-## ✍️ 3. Copywriting & Visual Adjustments
+## ✉️ 3. Setting Up Transactional Emails (Resend API)
 
-To refine the messaging and fine-tune your brand story:
-* **Product Configuration Metadata**: Modify [src/productConfig.js](file:///Users/rene/Documents/Projekte/shop/src/productConfig.js) to customize:
-  - Base descriptions, materials, and stone characteristics.
-  - Sourcing editorial text for the 925 sterling silver, raw mineral lava, onyx, stripe-agate beads, and carabiner safety hardware.
-* **Component Text**: Modify [src/App.jsx](file:///Users/rene/Documents/Projekte/shop/src/App.jsx) for custom drop dates, email notifications, and footer statements.
+To enable live email notifications to customers as their orders advance through the sourcing and production stages:
+1. **Create a Resend Account**:
+   - Register a free developer account at [Resend.com](https://resend.com/).
+   - Add and verify your custom domain (e.g., `renepuskas.com`) in the Resend Domains settings.
+2. **Add the API Key to Environment**:
+   - Create an API key in the Resend dashboard.
+   - Add it to your `.env` file:
+     ```env
+     VITE_RESEND_API_KEY=re_your_api_key_here
+     ```
+   - Restart your server. The mail client will automatically switch from **Mock Mail Mode** to live delivery, dispatching premium, dark HSL template emails directly from your verified brand domain!
 
 ---
 
 ## 🌐 4. Production Build & Deployment
 
-To launch the web shop globally so real users can access the interactive page:
+To launch the web shop globally for your audience:
 
 ### Build for Production
-Run the production compiler to generate a optimized, minified bundle:
+Run the production compiler to generate an optimized static bundle in `/dist`:
 ```bash
 npm run build
 ```
-This generates highly optimized static assets in the `/dist` directory.
 
-### Deploying the Store (Options)
-1. **Firebase Hosting (Recommended / Free Tier)**:
-   - Install the Firebase CLI: `npm install -g firebase-tools`
-   - Run `firebase login` and `firebase init hosting`.
-   - Select your project, choose `/dist` as your public directory, and configure as a single-page app.
-   - Run `firebase deploy` to launch it onto a secure `web.app` subdomain.
-2. **Vercel or Netlify (One-click Git integrations)**:
-   - Connect your shop repository to Vercel or Netlify.
-   - Set the build command to `npm run build` and publish directory to `dist`.
-   - Setup your environment variables in their dashboard settings.
+### Deploy to Hosting
+Using **Firebase Hosting** (highly recommended, free tier):
+```bash
+# Log in to your Firebase account (if not done)
+npx firebase login
 
-### Custom Domain Setup
-Map your custom domain (`renepuskas.com` or similar) through the hosting provider's DNS dashboard to complete the premium quiet-luxury presentation.
+# Deploy host files to live server
+npx firebase deploy --only hosting
+```
+Your store will go live instantly on your secure `web.app` or `firebaseapp.com` subdomain!
